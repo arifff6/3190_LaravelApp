@@ -10,7 +10,10 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\EventController as EventAdminController;
 
+use App\Http\Controllers\PartnerController;
+
 /*
+
 |--------------------------------------------------------------------------
 | Web Routes
 |--------------------------------------------------------------------------
@@ -30,7 +33,7 @@ Route::get('/my-ticket', [EventController::class, 'ticket'])->name('ticket');
 
 
 // ==========================================
-// RUTE ADMIN AREA (Sesuai Modul 5)
+// RUTE ADMIN AREA
 // ==========================================
 Route::prefix('admin')->name('admin.')->group(function () {
     
@@ -39,7 +42,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     
     // RUTE RESOURCE (Otomatis: index, create, store, edit, update, destroy)
     Route::resource('events', EventAdminController::class);
+    Route::resource('partners', PartnerController::class); // <-- Ini sudah digabung di sini
     
-    // Laporan Transaksi (Nama disesuaikan dengan sidebar kamu)
+    // Laporan Transaksi
     Route::get('/transactions', [DashboardController::class, 'transactions'])->name('transactions');
 });
