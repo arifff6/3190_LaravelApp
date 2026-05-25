@@ -6,9 +6,19 @@
 @section('page_subtitle', 'Buat dan atur acara seru Anda di sini.')
 
 @section('content')
-<div class="mb-4 text-right">
-    <a href="{{ route('admin.events.create') }}" class="inline-block px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100 hover:bg-indigo-700 active:scale-95 transition">
-        + Tambah Event Baru
+<div class="mb-6 flex justify-between items-center">
+    <form action="{{ route('admin.events.index') }}" method="GET" class="flex gap-2">
+        <input type="text" name="search" value="{{ request('search') }}" 
+            placeholder="Cari event..." 
+            class="px-5 py-3 rounded-2xl border border-slate-200 outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-600 transition">
+        
+        <button type="submit" class="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition">
+            Cari
+        </button>
+    </form>
+
+    <a href="{{ route('admin.events.create') }}" class="px-6 py-3 bg-indigo-600 text-white rounded-2xl font-bold hover:bg-indigo-700 transition">
+        + Tambah Baru
     </a>
 </div>
 
@@ -33,7 +43,6 @@
                     <td class="px-8 py-6">
                         <div class="w-16 h-20 rounded-xl overflow-hidden shadow-sm border border-slate-100 bg-slate-50">
                             @if($event->poster_path)
-                            {{-- PERBAIKAN: Gunakan $event->poster_path (bukan $events) --}}
                             <img src="{{ Storage::url($event->poster_path) }}"
                                 class="w-full h-full object-cover"
                                 onerror="this.src='https://placehold.co/160x200?text=Not+Found'">
@@ -76,7 +85,13 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="px-8 py-12 text-center text-slate-500">Belum ada acara yang ditambahkan.</td>
+                    <td colspan="5" class="px-8 py-12 text-center text-slate-500">
+                        @if(request('search'))
+                            Tidak ada event yang ditemukan dengan kata kunci "{{ request('search') }}".
+                        @else
+                            Belum ada acara yang ditambahkan.
+                        @endif
+                    </td>
                 </tr>
                 @endforelse
             </tbody>
@@ -84,7 +99,7 @@
     </div>
 
     <div class="px-8 py-6 bg-slate-50/50 border-t">
-        {{ $events->links() }}
+        {{ $events->appends(request()->query())->links() }}
     </div>
 </div>
 @endsection

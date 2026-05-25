@@ -29,6 +29,16 @@
                 Kelola Event
             </a>
 
+            {{-- Kelola Kategori (Diperbaiki ke .index) --}}
+            <a href="{{ route('admin.categories.index') }}" class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('admin.categories.*') ? 'bg-indigo-800 text-white' : 'hover:bg-indigo-800' }} rounded-xl font-bold transition">
+                Kelola Kategori
+            </a>
+
+             {{-- Kelola Partner (Diperbaiki ke .index) --}}
+            <a href="{{ route('admin.partners.index') }}" class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('admin.partners.*') ? 'bg-indigo-800 text-white' : 'hover:bg-indigo-800' }} rounded-xl font-bold transition">
+                Kelola Partner
+            </a>
+
             {{-- Laporan --}}
             <a href="{{ route('admin.transactions') }}" class="flex items-center gap-3 px-4 py-3 {{ request()->routeIs('admin.transactions') ? 'bg-indigo-800 text-white' : 'hover:bg-indigo-800' }} rounded-xl font-bold transition">
                 Laporan

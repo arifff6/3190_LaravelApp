@@ -14,17 +14,20 @@ class EventController extends Controller
      * Display a listing of the resource (READ).
      * Sesuai Modul 5.4.4
      */
-    public function index()
-    {
-        // Memakai relasi dan pengaturan limit paginasi (10 entri per halaman)
-        $events = Event::with('category')->latest()->paginate(10);
-        return view('admin.events.index', compact('events'));
+    public function index(Request $request)
+{
+    $query = \App\Models\Event::query();
+
+    if ($request->has('search') && $request->search != '') {
+        $query->where('title', 'LIKE', '%' . $request->search . '%');
     }
 
-    /**
-     * Show the form for creating a new resource (CREATE).
-     * Sesuai Modul 5.4.5
-     */
+    // Pastikan hanya baris ini yang aktif, tanpa // di depannya
+    $events = $query->latest()->paginate(10); 
+
+    return view('admin.events.index', compact('events'));
+}
+
     public function create()
     {
         $categories = Category::all();

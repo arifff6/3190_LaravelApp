@@ -7,29 +7,30 @@ use Illuminate\Http\Request;
 
 class HomeController extends Controller
 {
-    public function index(Request $request)
+   public function index(Request $request)
     {
-        // 1. Ambil semua jenis kategori untuk tampilan filter tab button 
+        // 1. Ambil semua jenis kategori
         $categories = Category::all();
+        
+        // 2. Ambil semua data partner (TAMBAHKAN INI)
+        $partners = \App\Models\Partner::all();
 
-        // 2. Buat kueri dasar untuk mengambil event: 
-        // - Gunakan Eager loading `category`
-        // - Hanya tampilkan kegiatan dengan jadwal yang belum kedaluwarsa (>= hari ini)
+        // 3. Buat kueri dasar untuk mengambil event
         $query = Event::with('category')
                       ->where('date', '>=', now())
                       ->orderBy('date', 'asc');
 
-        // 3. Filter query jika url memiliki parameter pencarian spesifik ?category=...
+        // 4. Filter query jika url memiliki parameter pencarian spesifik
         if ($request->has('category') && $request->category != '') {
-            // Saring berdasarkan relasi tabel rujukan melalui properti slug kategori.
             $query->whereHas('category', function ($q) use ($request) {
- $q->where('slug', $request->category);
+                $q->where('slug', $request->category);
             });
         }
 
-        // 4. Eksekusi query dan kirim data hasilnya ke template Blade
+        // 5. Eksekusi query
         $events = $query->get();
 
-        return view('welcome', compact('events', 'categories'));
+        // 6. KIRIM KE VIEW (TAMBAHKAN 'partners' DI SINI)
+        return view('welcome', compact('events', 'categories', 'partners'));
     }
 }
