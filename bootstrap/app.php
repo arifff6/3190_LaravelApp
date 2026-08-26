@@ -11,7 +11,15 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Gabungkan alias middleware di sini
+        $middleware->alias([
+            'admin' => \App\Http\Middleware\AdminMiddleware::class, 
+        ]);
+
+        // Gabungkan pengecualian CSRF untuk webhook Midtrans di sini
+        $middleware->validateCsrfTokens(except: [
+            '/midtrans/callback', 
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

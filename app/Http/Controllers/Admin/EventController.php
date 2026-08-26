@@ -39,28 +39,30 @@ class EventController extends Controller
      * Sesuai Modul 5.4.5
      */
     public function store(Request $request)
-    {
-        // Menerapkan validasi data request dari pengguna
-        $data = $request->validate([
-            'category_id' => 'required',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'date' => 'required|date',
-            'location' => 'required|string|max:255',
-            'price' => 'required|numeric',
-            'stock' => 'required|numeric'
-        ]);
+{
+     // Menerapkan validasi data request dari pengguna
+     $data = $request->validate([
+        'category_id' => 'required|exists:categories,id',
+        'title' => 'required|string|max:255',
+        'description' => 'nullable|string',
+        'date' => 'required|date',
+        'location' => 'required|string|max:255',
+        'price' => 'required|numeric|min:0',
+        'stock' => 'required|numeric|min:1',
+        'poster' => 'nullable|image|max:2048' // Maksimal 2MB
+ ]);
 
-        // Opsional: Logika upload gambar (Tambahan agar aplikasi fungsional)
-        if ($request->hasFile('poster')) {
-            $data['poster_path'] = $request->file('poster')->store('posters', 'public');
-        }
-
-        // Menyimpan data menggunakan Model
-        Event::create($data);
-
-        return redirect()->route('admin.events.index')->with('success', 'Data Event berhasil ditambahkan.');
+    if ($request->hasFile('poster')) {
+        // Simpan ke direktori storage/app/public/posters
+        $data['poster_path'] = $request->file('poster')->store('posters', 'public');
     }
+
+     // Menyimpan data yang telah divalidasi ke dalam tabel menggunakan Model
+     \App\Models\Event::create($data);
+
+     return redirect()->route('admin.events.index')->with('success', 'Data Event berhasil ditambahkan.');
+}
+
 
     /**
      * Show the form for editing the specified resource (EDIT).
@@ -76,28 +78,31 @@ class EventController extends Controller
      * Update the specified resource in storage (UPDATE).
      * Sesuai Modul 5.4.7
      */
-    public function update(Request $request, Event $event)
-    {
-        $data = $request->validate([
-            'category_id' => 'required',
-            'title' => 'required|string|max:255',
-            'description' => 'required|string',
-            'date' => 'required|date',
-            'location' => 'required|string|max:255',
-            'price' => 'required|numeric',
-            'stock' => 'required|numeric'
-        ]);
+   public function update(Request $request, Event $event)
+{
+   $data = $request->validate([
+        'category_id' => 'required|exists:categories,id',
+        'title' => 'required|string|max:255',
+'description' => 'nullable|string',
+        'date' => 'required|date',
+        'location' => 'required|string|max:255',
+        'price' => 'required|numeric|min:0',
+        'stock' => 'required|numeric|min:1',
+        'poster' => 'nullable|image|max:2048'
+    ]); 
 
-        // Logika Update Gambar jika ada file baru
-        if ($request->hasFile('poster')) {
-            if ($event->poster_path) Storage::disk('public')->delete($event->poster_path);
-            $data['poster_path'] = $request->file('poster')->store('posters', 'public');
+    if ($request->hasFile('poster')) {
+        // Hapus gambar lama jika sebelumnya sudah memiliki poster
+        if ($event->poster_path) {
+            \Illuminate\Support\Facades\Storage::disk('public')->delete($event->poster_path);
         }
-
-        $event->update($data);
-
-        return redirect()->route('admin.events.index')->with('success', 'Rincian data event berhasil diperbarui.');
+        // Upload gambar baru
+        $data['poster_path'] = $request->file('poster')->store('posters', 'public');
     }
+
+    $event->update($data);
+    return redirect()->route('admin.events.index')->with('success', 'Event berhasil diperbarui.');
+}
 
     /**
      * Remove the specified resource from storage (DELETE).
