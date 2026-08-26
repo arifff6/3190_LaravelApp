@@ -4,55 +4,57 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
-echo "<h2>--- DIAGNOSTIK LARAVEL DI VERCEL ---</h2>";
+// 1. Buat folder sementara di /tmp
+$dirs = [
+    '/tmp/storage',
+    '/tmp/storage/app',
+    '/tmp/storage/app/public',
+    '/tmp/storage/framework',
+    '/tmp/storage/framework/cache',
+    '/tmp/storage/framework/cache/data',
+    '/tmp/storage/framework/sessions',
+    '/tmp/storage/framework/views',
+    '/tmp/storage/logs',
+    '/tmp/bootstrap/cache',
+];
 
-// 1. Cek Permission Folder /tmp
-try {
-    $testFile = '/tmp/test_write.txt';
-    file_put_contents($testFile, 'OK');
-    if (file_exists($testFile)) {
-        echo "<p style='color:green;'>[PASS] 1. Folder /tmp bisa ditulisi (Writable).</p>";
+foreach ($dirs as $dir) {
+    if (!is_dir($dir)) {
+        mkdir($dir, 0777, true);
     }
-} catch (\Throwable $e) {
-    die("<p style='color:red;'>[FAIL] 1. Folder /tmp error: " . $e->getMessage() . "</p>");
 }
 
-// 2. Cek Composer Vendor Autoload
-try {
-    $autoloadPath = __DIR__ . '/../vendor/autoload.php';
-    if (!file_exists($autoloadPath)) {
-        die("<p style='color:red;'>[FAIL] 2. vendor/autoload.php tidak ditemukan di server!</p>");
-    }
-    require $autoloadPath;
-    echo "<p style='color:green;'>[PASS] 2. Composer Autoload berhasil dimuat.</p>";
-} catch (\Throwable $e) {
-    die("<p style='color:red;'>[FAIL] 2. Autoload error: " . $e->getMessage() . "</p>");
-}
+// 2. Set environment paths
+putenv('LOG_CHANNEL=stderr');
+putenv('APP_STORAGE=/tmp/storage');
+putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
+putenv('APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php');
+putenv('APP_EVENTS_CACHE=/tmp/bootstrap/cache/events.php');
+putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
+putenv('APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes-v7.php');
+putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
 
-// 3. Cek Environment Variables (APP_KEY)
-$appKey = getenv('APP_KEY') ?: ($_ENV['APP_KEY'] ?? null);
-if (empty($appKey)) {
-    echo "<p style='color:orange;'>[WARNING] 3. APP_KEY kosong di Environment Variables Vercel!</p>";
-} else {
-    echo "<p style='color:green;'>[PASS] 3. APP_KEY terdeteksi.</p>";
-}
+// 3. Autoload & Inisialisasi
+require __DIR__ . '/../vendor/autoload.php';
 
-// 4. Cek Load bootstrap/app.php
 try {
-    $bootstrapPath = __DIR__ . '/../bootstrap/app.php';
-    if (!file_exists($bootstrapPath)) {
-        die("<p style='color:red;'>[FAIL] 4. bootstrap/app.php tidak ditemukan!</p>");
-    }
+    $app = require_once __DIR__ . '/../bootstrap/app.php';
+
+    // Binding storage path ke /tmp
+    $app->useStoragePath('/tmp/storage');
+
+    // Eksekusi HTTP Request
+    $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
     
-    // Set path cache sementara sebelum load app
-    putenv('VIEW_COMPILED_PATH=/tmp');
-    putenv('APP_CONFIG_CACHE=/tmp/config.php');
-    putenv('APP_ROUTES_CACHE=/tmp/routes.php');
+    $request = Illuminate\Http\Request::capture();
+    $response = $kernel->handle($request);
     
-    $app = require_once $bootstrapPath;
-    echo "<p style='color:green;'>[PASS] 4. bootstrap/app.php berhasil diinisialisasi (" . get_class($app) . ").</p>";
+    $response->send();
+    
+    $kernel->terminate($request, $response);
 } catch (\Throwable $e) {
-    die("<p style='color:red;'>[FAIL] 4. Gagal bootstrap app: " . $e->getMessage() . "<br><pre>" . $e->getTraceAsString() . "</pre></p>");
+    echo "<h1>Error saat Merender Halaman:</h1>";
+    echo "<p><strong>Pesan:</strong> " . htmlspecialchars($e->getMessage()) . "</p>";
+    echo "<p><strong>File:</strong> " . htmlspecialchars($e->getFile()) . " di baris <strong>" . $e->getLine() . "</strong></p>";
+    echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
 }
-
-echo "<h3>Semua komponen dasar normal. Tinggal mengeksekusi kernel HTTP.</h3>";
