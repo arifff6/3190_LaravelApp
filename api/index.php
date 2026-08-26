@@ -1,15 +1,7 @@
 <?php
 
-// Paksa tampilkan error jika terjadi crash
-ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
-error_reporting(E_ALL);
-
-// Siapkan folder writeable di /tmp
-$dirs = [
-    '/tmp/storage',
+$storageDirs = [
     '/tmp/storage/app',
-    '/tmp/storage/framework',
     '/tmp/storage/framework/cache',
     '/tmp/storage/framework/cache/data',
     '/tmp/storage/framework/sessions',
@@ -18,14 +10,12 @@ $dirs = [
     '/tmp/bootstrap/cache',
 ];
 
-foreach ($dirs as $dir) {
+foreach ($storageDirs as $dir) {
     if (!is_dir($dir)) {
         mkdir($dir, 0777, true);
     }
 }
 
-// Redirect path cache dan storage
-putenv('APP_STORAGE=/tmp/storage');
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 putenv('APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php');
 putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
