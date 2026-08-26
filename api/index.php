@@ -1,6 +1,6 @@
 <?php
 
-// 1. Buat folder temporary di /tmp
+// 1. Buat struktur folder /tmp
 $dirs = [
     '/tmp/storage/app/public',
     '/tmp/storage/framework/cache/data',
@@ -16,7 +16,7 @@ foreach ($dirs as $dir) {
     }
 }
 
-// 2. Arahkan semua cache internal ke /tmp
+// 2. Set environment paths
 putenv('APP_STORAGE=/tmp/storage');
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 putenv('APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php');
@@ -25,5 +25,24 @@ putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
 putenv('APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes-v7.php');
 putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
 
-// 3. Jalankan index bawaan Laravel
-require __DIR__ . '/../public/index.php';
+// Pastikan nilai default jika kosong
+if (empty($_ENV['SESSION_DRIVER'])) {
+    putenv('SESSION_DRIVER=cookie');
+    $_ENV['SESSION_DRIVER'] = 'cookie';
+    $_SERVER['SESSION_DRIVER'] = 'cookie';
+}
+
+if (empty($_ENV['CACHE_STORE'])) {
+    putenv('CACHE_STORE=array');
+    $_ENV['CACHE_STORE'] = 'array';
+    $_SERVER['CACHE_STORE'] = 'array';
+}
+
+// 3. Autoload & Inisialisasi
+require __DIR__ . '/../vendor/autoload.php';
+
+$app = require_once __DIR__ . '/../bootstrap/app.php';
+
+$app->useStoragePath('/tmp/storage');
+
+$app->handleRequest(Illuminate\Http\Request::capture());
