@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'driver' => !empty(env('SESSION_DRIVER')) ? env('SESSION_DRIVER') : 'cookie',
+    'driver' => 'cookie',
     'lifetime' => 120,
     'expire_on_close' => false,
     'encrypt' => false,
