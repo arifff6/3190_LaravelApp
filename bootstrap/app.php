@@ -4,22 +4,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
-// Siapkan folder /tmp untuk filesystem read-only Vercel
-$dirs = [
-    '/tmp/storage/app/public',
-    '/tmp/storage/framework/cache/data',
-    '/tmp/storage/framework/sessions',
-    '/tmp/storage/framework/views',
-    '/tmp/storage/logs',
-    '/tmp/bootstrap/cache',
-];
-
-foreach ($dirs as $dir) {
-    if (!is_dir($dir)) {
-        mkdir($dir, 0777, true);
-    }
-}
-
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -27,7 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Matikan session middleware stateful jika hanya render view statis/API di serverless
+        // Matikan StartSession bawaan agar tidak menyentuh session storage disk read-only
         $middleware->web(remove: [
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
@@ -39,21 +23,20 @@ return Application::configure(basePath: dirname(__DIR__))
     ->booting(function (Application $app) {
         $app->useStoragePath('/tmp/storage');
 
-        // Force konfigurasi session, cache, dan log langsung di repository config
+        // Force override semua driver agar tidak pernah bernilai empty string
         $config = $app->make('config');
-        $config->set([
-            'session.driver' => 'array',
-            'session.store' => 'array',
-            'cache.default' => 'array',
-            'cache.stores.array' => ['driver' => 'array', 'serialize' => false],
-            'logging.default' => 'stderr',
-            'logging.channels.stderr' => [
-                'driver' => 'monolog',
-                'handler' => \Monolog\Handler\StreamHandler::class,
-                'formatter' => env('LOG_STDERR_FORMATTER'),
-                'with' => ['stream' => 'php://stderr'],
-            ],
-            'view.compiled' => '/tmp/storage/framework/views',
+        $config->set('session.driver', 'cookie');
+        $config->set('session.lifetime', 120);
+        $config->set('cache.default', 'array');
+        $config->set('cache.stores.array', ['driver' => 'array', 'serialize' => false]);
+        $config->set('logging.default', 'stderr');
+        $config->set('logging.channels.stderr', [
+            'driver' => 'monolog',
+            'handler' => \Monolog\Handler\StreamHandler::class,
+            'formatter' => env('LOG_STDERR_FORMATTER'),
+            'with' => ['stream' => 'php://stderr'],
         ]);
+        $config->set('queue.default', 'sync');
+        $config->set('view.compiled', '/tmp/storage/framework/views');
     })
     ->create();
