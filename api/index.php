@@ -24,8 +24,14 @@ foreach ($dirs as $dir) {
     }
 }
 
-// 2. Set environment paths
+// 2. Set driver wajib agar tidak kosong
 putenv('LOG_CHANNEL=stderr');
+putenv('SESSION_DRIVER=cookie');
+putenv('CACHE_STORE=array');
+putenv('CACHE_DRIVER=array');
+putenv('QUEUE_CONNECTION=sync');
+
+// 3. Set path temporary storage & cache
 putenv('APP_STORAGE=/tmp/storage');
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 putenv('APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php');
@@ -34,16 +40,16 @@ putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
 putenv('APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes-v7.php');
 putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
 
-// 3. Autoload & Inisialisasi
+// 4. Autoload & Inisialisasi Kernel
 require __DIR__ . '/../vendor/autoload.php';
 
 try {
     $app = require_once __DIR__ . '/../bootstrap/app.php';
 
-    // Binding storage path ke /tmp
-    $app->useStoragePath('/tmp/storage');
+    if (method_exists($app, 'useStoragePath')) {
+        $app->useStoragePath('/tmp/storage');
+    }
 
-    // Eksekusi HTTP Request
     $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
     
     $request = Illuminate\Http\Request::capture();
