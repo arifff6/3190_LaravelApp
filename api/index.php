@@ -1,27 +1,35 @@
 <?php
 
-// Buat direktori sementara sebelum aplikasi dijalankan
-$storageDirs = [
+// Paksa tampilkan error jika terjadi crash
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
+
+// Siapkan folder writeable di /tmp
+$dirs = [
     '/tmp/storage',
     '/tmp/storage/app',
-    '/tmp/storage/app/public',
     '/tmp/storage/framework',
     '/tmp/storage/framework/cache',
     '/tmp/storage/framework/cache/data',
     '/tmp/storage/framework/sessions',
     '/tmp/storage/framework/views',
     '/tmp/storage/logs',
+    '/tmp/bootstrap/cache',
 ];
 
-foreach ($storageDirs as $dir) {
+foreach ($dirs as $dir) {
     if (!is_dir($dir)) {
         mkdir($dir, 0777, true);
     }
 }
 
-// Set cache path view agar tidak menulis ke read-only disk
+// Redirect path cache dan storage
+putenv('APP_STORAGE=/tmp/storage');
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
-$_ENV['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
-$_SERVER['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
+putenv('APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php');
+putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
+putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
+putenv('APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes-v7.php');
 
 require __DIR__ . '/../public/index.php';
