@@ -4,7 +4,7 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
-// 1. Buat folder sementara di /tmp
+// 1. Buat folder wajib di /tmp
 $dirs = [
     '/tmp/storage',
     '/tmp/storage/app',
@@ -24,14 +24,7 @@ foreach ($dirs as $dir) {
     }
 }
 
-// 2. Set driver wajib agar tidak kosong
-putenv('LOG_CHANNEL=stderr');
-putenv('SESSION_DRIVER=cookie');
-putenv('CACHE_STORE=array');
-putenv('CACHE_DRIVER=array');
-putenv('QUEUE_CONNECTION=sync');
-
-// 3. Set path temporary storage & cache
+// 2. Set environment path
 putenv('APP_STORAGE=/tmp/storage');
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 putenv('APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php');
@@ -40,27 +33,36 @@ putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
 putenv('APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes-v7.php');
 putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
 
-// 4. Autoload & Inisialisasi Kernel
+// 3. Load Autoload & App
 require __DIR__ . '/../vendor/autoload.php';
+$app = require_once __DIR__ . '/../bootstrap/app.php';
 
-try {
-    $app = require_once __DIR__ . '/../bootstrap/app.php';
-
-    if (method_exists($app, 'useStoragePath')) {
-        $app->useStoragePath('/tmp/storage');
-    }
-
-    $kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
-    
-    $request = Illuminate\Http\Request::capture();
-    $response = $kernel->handle($request);
-    
-    $response->send();
-    
-    $kernel->terminate($request, $response);
-} catch (\Throwable $e) {
-    echo "<h1>Error saat Merender Halaman:</h1>";
-    echo "<p><strong>Pesan:</strong> " . htmlspecialchars($e->getMessage()) . "</p>";
-    echo "<p><strong>File:</strong> " . htmlspecialchars($e->getFile()) . " di baris <strong>" . $e->getLine() . "</strong></p>";
-    echo "<pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre>";
+if (method_exists($app, 'useStoragePath')) {
+    $app->useStoragePath('/tmp/storage');
 }
+
+// 4. Force config fallback langsung ke config repository
+$app->booted(function ($app) {
+    $config = $app->make('config');
+    
+    // Set fallback driver yang aman untuk serverless
+    if (!$config->get('session.driver')) {
+        $config->set('session.driver', 'cookie');
+    }
+    if (!$config->get('cache.default')) {
+        $config->set('cache.default', 'array');
+    }
+    if (!$config->get('logging.default')) {
+        $config->set('logging.default', 'stderr');
+    }
+});
+
+// 5. Eksekusi Request
+$kernel = $app->make(Illuminate\Contracts\Http\Kernel::class);
+
+$request = Illuminate\Http\Request::capture();
+$response = $kernel->handle($request);
+
+$response->send();
+
+$kernel->terminate($request, $response);
