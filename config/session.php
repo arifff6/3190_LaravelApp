@@ -1,12 +1,7 @@
 <?php
 
-$driver = env('SESSION_DRIVER');
-if (empty($driver)) {
-    $driver = 'cookie';
-}
-
 return [
-    'driver' => $driver,
+    'driver' => 'cookie',
     'lifetime' => 120,
     'expire_on_close' => false,
     'encrypt' => false,

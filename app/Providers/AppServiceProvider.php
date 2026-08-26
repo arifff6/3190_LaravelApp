@@ -11,7 +11,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        config([
+            'session.driver' => 'cookie',
+            'cache.default' => 'array',
+            'logging.default' => 'stderr',
+        ]);
     }
 
     /**
