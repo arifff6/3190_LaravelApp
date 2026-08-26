@@ -15,4 +15,13 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //
-    })->create();
+    })
+    ->booting(function (Application $app) {
+        $app->useStoragePath('/tmp/storage');
+        config([
+            'session.driver' => 'cookie',
+            'cache.default' => 'array',
+            'logging.default' => 'stderr',
+        ]);
+    })
+    ->create();
