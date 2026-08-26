@@ -1,6 +1,6 @@
 <?php
 
-// 1. Buat folder temporary di /tmp
+// Setup writeable folder di /tmp
 $dirs = [
     '/tmp/storage/app',
     '/tmp/storage/app/public',
@@ -17,7 +17,7 @@ foreach ($dirs as $dir) {
     }
 }
 
-// 2. Set environment paths
+// Set environment path
 putenv('APP_STORAGE=/tmp/storage');
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 putenv('APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php');
@@ -26,9 +26,15 @@ putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
 putenv('APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes-v7.php');
 putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
 
-// 3. Autoload & Eksekusi
+putenv('SESSION_DRIVER=cookie');
+putenv('CACHE_STORE=array');
+putenv('CACHE_DRIVER=array');
+putenv('LOG_CHANNEL=stderr');
+
 require __DIR__ . '/../vendor/autoload.php';
 
 $app = require_once __DIR__ . '/../bootstrap/app.php';
+
+$app->useStoragePath('/tmp/storage');
 
 $app->handleRequest(Illuminate\Http\Request::capture());
