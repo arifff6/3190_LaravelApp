@@ -10,22 +10,14 @@ $app = Application::configure(basePath: dirname(__DIR__))
         commands: __DIR__.'/../routes/console.php',
         health: '/up',
     )
-    ->withMiddleware(function (Middleware $middleware): void {
-        // Gabungkan alias middleware di sini
-        $middleware->alias([
-            'admin' => \App\Http\Middleware\AdminMiddleware::class, 
-        ]);
-
-        // Gabungkan pengecualian CSRF untuk webhook Midtrans di sini
-        $middleware->validateCsrfTokens(except: [
-            '/midtrans/callback', 
-        ]);
+    ->withMiddleware(function (Middleware $middleware) {
+        //
     })
-    ->withExceptions(function (Exceptions $exceptions): void {
+    ->withExceptions(function (Exceptions $exceptions) {
         //
     })->create();
 
-// Gunakan folder /tmp hanya saat berjalan di environment Vercel
+// Pindahkan storage path ke /tmp jika berjalan di Vercel
 if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL'])) {
     $app->useStoragePath('/tmp/storage');
 }
