@@ -4,7 +4,7 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 
-// 1. Buat folder temporary di /tmp
+// Siapkan folder /tmp untuk filesystem read-only Vercel
 $dirs = [
     '/tmp/storage/app/public',
     '/tmp/storage/framework/cache/data',
@@ -20,15 +20,6 @@ foreach ($dirs as $dir) {
     }
 }
 
-// 2. Set environment paths
-putenv('APP_STORAGE=/tmp/storage');
-putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
-putenv('APP_CONFIG_CACHE=/tmp/bootstrap/cache/config.php');
-putenv('APP_EVENTS_CACHE=/tmp/bootstrap/cache/events.php');
-putenv('APP_PACKAGES_CACHE=/tmp/bootstrap/cache/packages.php');
-putenv('APP_ROUTES_CACHE=/tmp/bootstrap/cache/routes-v7.php');
-putenv('APP_SERVICES_CACHE=/tmp/bootstrap/cache/services.php');
-
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -36,7 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Matikan StartSession bawaan agar tidak memicu Manager::createDriver()
+        // Matikan session middleware stateful jika hanya render view statis/API di serverless
         $middleware->web(remove: [
             \Illuminate\Session\Middleware\StartSession::class,
             \Illuminate\View\Middleware\ShareErrorsFromSession::class,
@@ -47,11 +38,22 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->booting(function (Application $app) {
         $app->useStoragePath('/tmp/storage');
-        
+
+        // Force konfigurasi session, cache, dan log langsung di repository config
         $config = $app->make('config');
-        $config->set('session.driver', 'array');
-        $config->set('session.lifetime', 120);
-        $config->set('cache.default', 'array');
-        $config->set('logging.default', 'stderr');
+        $config->set([
+            'session.driver' => 'array',
+            'session.store' => 'array',
+            'cache.default' => 'array',
+            'cache.stores.array' => ['driver' => 'array', 'serialize' => false],
+            'logging.default' => 'stderr',
+            'logging.channels.stderr' => [
+                'driver' => 'monolog',
+                'handler' => \Monolog\Handler\StreamHandler::class,
+                'formatter' => env('LOG_STDERR_FORMATTER'),
+                'with' => ['stream' => 'php://stderr'],
+            ],
+            'view.compiled' => '/tmp/storage/framework/views',
+        ]);
     })
     ->create();
