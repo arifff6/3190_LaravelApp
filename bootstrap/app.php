@@ -17,9 +17,14 @@ $app = Application::configure(basePath: dirname(__DIR__))
         //
     })->create();
 
-// Bind storage path ke /tmp khusus environment Vercel Serverless
-if (isset($_ENV['VERCEL']) || isset($_SERVER['VERCEL']) || getenv('VERCEL')) {
-    $app->useStoragePath('/tmp/storage');
-}
+// Bind storage path dan force default driver untuk serverless
+$app->useStoragePath('/tmp/storage');
+
+$app->booting(function () use ($app) {
+    $config = $app->make('config');
+    $config->set('session.driver', 'cookie');
+    $config->set('cache.default', 'array');
+    $config->set('logging.default', 'stderr');
+});
 
 return $app;
